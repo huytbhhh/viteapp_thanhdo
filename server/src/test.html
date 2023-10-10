@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Document</title>
+</head>
+<body>
+     <div id="login" style="display: none;">
+          <input type="text" name="email" id="email" placeholder="email"><br>
+          <input type="text" name="pass" id="pass" placeholder="pass"><br>
+          <button onclick="login()">đăng nhập</button>
+
+
+     </div>
+     <div id="menu" style="height: 50px;border-bottom:1px #ccc solid;align-items: center;text-align: center;">
+
+     </div>
+
+     <div style="border-bottom:1px #ccc solid;margin-bottom: 10px;">
+          <ol id="ol">
+
+          </ol>
+     </div>
+     <form action="/upload" method="post">
+          <input type="file" name="excelFile" enctype="multipart/form-data" id="">
+          <button type="submit">Gửi</button>
+     </form>
+    <script>
+     var isLogin=true;
+// Đọc giá trị của key từ cookie
+var cookieValue = document.cookie.replace(/(?:(?:^|.*;\s*)email\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+
+
+// alert("Giá trị của key từ cookie:", cookieValue);
+
+
+
+     // fetch("http://localhost:8080/session").then(response=>response.json()).then(data=>{
+          // if(data.error){
+          //      alert("Bạn chưa login");
+          // }
+          if(!cookieValue){
+               document.getElementById("login").style.display="block";
+               function login(){
+                    var email=document.getElementById("email").value;
+                    var pass=document.getElementById("pass").value;
+
+                    fetch("http://localhost:8080/api/signin?email="+email+"&password="+pass).then(res=>res.json()).then(data=>{
+                         // alert(data.name)
+                         document.cookie = "email="+data.user.email;
+                         document.cookie = "role="+data.user.role;
+
+                    })
+               }
+          }
+          else{
+               var email = document.cookie.replace(/(?:(?:^|.*;\s*)email\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+               var role = document.cookie.replace(/(?:(?:^|.*;\s*)role\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+               if(role=='admin'){
+                    fetch("http://localhost:8080/task").then(res=>res.json()).then(value=>{
+                         var i = 0 ;
+                         value.forEach(element => {
+                              i++;
+                              var text="<li><h2>"+element.task+"</h2><ul>";
+                              element['user'].forEach(vas=>{
+                                   text+="<li>"+vas.username+`<button onclick="Delete(`+i+`,'`+vas.username+`')"">Xoá</button></li>`;
+                              })
+                              text+="</ul></li>"
+                              document.getElementById("ol").innerHTML+=text+"<input placeholder='Thêm người dùng' id='input"+i+"'><button onclick='add("+i+")'>Thêm</button>";
+                         });
+                    })
+               }
+               if(role=='manager'){
+                    
+                    fetch("http://localhost:8080/task").then(res=>res.json()).then(value=>{
+                         var i = 0 ;
+                         value.forEach(element => {
+                              i++;
+                              var text="<li><h2>"+element.task+"</h2><ul>";
+                              element['user'].forEach(vas=>{
+                                   if(vas.permission=='all')text+="<li>"+vas.username+`<button onclick="Delete(`+i+`,'`+vas.username+`')"">Xoá</button></li>`;
+                              })
+                              text+="</ul></li>"
+                              document.getElementById("ol").innerHTML+=text+"<input placeholder='Thêm người dùng' id='input"+i+"'><button onclick='add("+i+")'>Thêm</button>";
+                              
+                         });
+                    }) 
+               }
+               //thêm user vào menu
+               fetch("http://localhost:8080/menu?email="+email).then(res=>res.json()).then(value=>{
+                    document.getElementById("menu").innerHTML=value.html;   
+               })
+          }
+     // })
+     
+     
+
+     function add(task){
+          var input=document.getElementById("input"+task).value;
+          var email = document.cookie.replace(/(?:(?:^|.*;\s*)email\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+
+          if(input!=""){
+               const xhr = new XMLHttpRequest();
+               xhr.open("GET", "http://localhost:8080/task?task="+task+"&addUser="+input+"&email="+email, true);
+               xhr.send();
+               alert("thêm thành công")
+               location.reload()
+          }
+          else alert("Input ko được để trống");
+     }
+     function Delete(task,username){
+          var email = document.cookie.replace(/(?:(?:^|.*;\s*)email\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+
+          const xhr = new XMLHttpRequest();
+          xhr.open("GET", "http://localhost:8080/task?task="+task+"&DeleteUser="+username+"&email="+email, true);
+          xhr.send();
+          alert("thêm thành công")
+          location.reload()
+     }
+
+    </script> 
+</body>
+</html>
